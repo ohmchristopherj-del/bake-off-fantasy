@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="Bake Off">
+<meta name="theme-color" content="#24272D">
+<title>Bake Off Fantasy League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F6F4; --surface:#FFFFFF; --ink:#1E2638; --muted:#6A7383; --line:#DCE3DF; --band:#EEF1F0;
+  --chloe:#C2385F; --cj:#2F62A8; --gold:#B7801A; --good:#2E7D4F; --bad:#9A3B3B;
+  --board:#24272D; --board-ink:#FFFFFF; --board-muted:#A9AFB9;
+  --b-chloe:#FF8FAE; --b-cj:#8DB4F2;
+  --ging:rgba(47,98,168,.16); --ging-base:#FFFFFF;
+  --display:"Shrikhand", "Cooper Black", Georgia, serif;
+  --body:"Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --tabbar:64px;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121519; --surface:#1C2229; --ink:#EEF1F5; --muted:#9AA6B5; --line:#2C3540; --band:#232A32;
+    --chloe:#F0789A; --cj:#82AAEA; --gold:#E8B54A; --good:#6CC892; --bad:#E58A8A;
+    --board:#1A1D22; --ging:rgba(130,170,234,.14); --ging-base:#1C2229;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121519; --surface:#1C2229; --ink:#EEF1F5; --muted:#9AA6B5; --line:#2C3540; --band:#232A32;
+  --chloe:#F0789A; --cj:#82AAEA; --gold:#E8B54A; --good:#6CC892; --bad:#E58A8A;
+  --board:#1A1D22; --ging:rgba(130,170,234,.14); --ging-base:#1C2229;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;
+  -webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+button,select,textarea{font:inherit;color:inherit;font-size:max(16px,1em);touch-action:manipulation}
+:focus-visible{outline:3px solid var(--cj);outline-offset:2px}
+.wrap{max-width:720px;margin:0 auto}
+
+/* Title strip: gingham + bunting */
+.title{background-color:var(--ging-base);
+  background-image:linear-gradient(90deg,var(--ging) 50%,transparent 50%),linear-gradient(0deg,var(--ging) 50%,transparent 50%);
+  background-size:24px 24px;padding:10px 16px 26px;position:relative;text-align:center}
+.title h1{font-family:var(--display);font-weight:400;font-size:1.45rem;line-height:1.1;margin:0}
+.bunting{position:absolute;left:0;right:0;bottom:0;height:18px;display:flex;overflow:hidden;border-top:2px solid var(--muted)}
+.bunting span{flex:0 0 26px;height:16px;margin:0 3px;clip-path:polygon(0 0,100% 0,50% 100%)}
+.bunting span:nth-child(3n+1){background:var(--chloe)}
+.bunting span:nth-child(3n+2){background:var(--gold)}
+.bunting span:nth-child(3n){background:var(--cj)}
+
+/* Scoreboard band (like the matchup screen) */
+.board{background:var(--board);color:var(--board-ink);touch-action:pan-y}
+.board .inner{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:14px 10px 10px}
+.tm{text-align:center}
+.tm .tn{font-weight:600;font-size:1.05rem}
+.tm .big{font-family:var(--display);font-size:clamp(2.6rem,13vw,3.4rem);line-height:1.05}
+.tm .wk{font-weight:600;font-size:.85rem;color:var(--board-muted)}
+.tm.chloe .tn{color:var(--b-chloe)} .tm.cj .tn{color:var(--b-cj)}
+.mid{text-align:center;color:var(--board-muted);padding:0 4px 8px;min-width:64px;align-self:center}
+.mid .lbl{display:block;font-weight:600}
+.mid .vs{display:inline-flex;width:40px;height:40px;border-radius:50%;border:2px solid var(--board-muted);align-items:center;justify-content:center;font-weight:700;font-size:.9rem}
+.mid .lbl{font-size:.8rem;margin-top:4px}
+.therm{padding:0 14px 14px}
+.therm .tl{display:flex;justify-content:space-between;align-items:baseline;font-size:.85rem;color:var(--board-muted);margin-bottom:5px}
+.therm .pc{font-weight:700;font-size:1rem}
+.therm .pc.chloe{color:var(--b-chloe)} .therm .pc.cj{color:var(--b-cj)}
+.bar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:#3A3F47;gap:2px}
+.fill{display:block;height:100%;transition:width .5s ease}
+.fill.chloe{background:var(--b-chloe)} .fill.cj{background:var(--b-cj)}
+.bar.even .fill{opacity:.35}
+.epbar{display:grid;grid-template-columns:56px 1fr 56px;align-items:center;background:var(--surface);border-bottom:1px solid var(--line);padding:8px 4px 4px;touch-action:pan-y}
+.epbar .arrow{background:none;border:0;font-size:2rem;line-height:1;color:var(--ink);min-height:48px;cursor:pointer}
+.epbar .arrow:disabled{opacity:.25}
+.eptitle{text-align:center;font-family:var(--display);font-size:1.6rem;line-height:1.1}
+.eptitle small{display:block;font-family:var(--body);font-size:.78rem;color:var(--muted);margin-top:3px}
+.tt{float:right;font-size:1rem;color:var(--ink)}
+table.data tr.sum td{font-weight:700;border-top:2px solid var(--line)}
+table.data small.o{display:block;font-size:.75rem}
+.btnrow{display:flex;flex-wrap:wrap;gap:10px}
+.btnrow .btn{margin-top:0}
+.btn:disabled{opacity:.4;cursor:default}
+.dots{display:flex;justify-content:center;align-items:center;gap:0;background:var(--band);border-bottom:1px solid var(--line);padding:2px 6px}
+.dots button{background:none;border:0;padding:12px 6px;cursor:pointer;display:flex;align-items:center}
+.dots i{display:block;width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dots i.pre{border-radius:2px}
+.dots i.has{background:var(--muted)}
+.dots button[aria-current="true"] i{background:var(--ink);transform:scale(1.35)}
+.dots .arrow{font-size:1.3rem;color:var(--muted);padding:6px 10px;font-weight:700}
+.dots .arrow:disabled{opacity:.3}
+
+main{padding:0 0 calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 20px)}
+
+/* Matchup rows */
+.row{display:grid;grid-template-columns:minmax(0,1fr) 3em 46px 3em minmax(0,1fr);align-items:center;background:var(--surface);border-bottom:1px solid var(--line);min-height:78px}
+.row .pos{align-self:stretch;display:flex;align-items:center;justify-content:center;background:var(--band);color:var(--muted);font-weight:600;font-size:.82rem;text-align:center}
+.row .pt{font-size:1.35rem;font-weight:600;text-align:center}
+.row .pt.l{color:var(--chloe)} .row .pt.r{color:var(--cj)}
+.side{padding:9px 10px;min-width:0}
+.side.r{text-align:right}
+.side .nm{font-weight:600;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side .sub{color:var(--muted);font-size:.8rem;line-height:1.3}
+.row.out .nm{color:var(--muted);text-decoration:line-through}
+.row.total{min-height:56px}
+.row.total .side .nm{font-size:.95rem}
+.ok{color:var(--good);font-weight:700} .no{color:var(--bad)}
+.pre-note{padding:22px 18px;text-align:center;color:var(--muted)}
+
+/* Score-it screen */
+.pad{padding:4px 12px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+h2{font-size:1.12rem;margin:0 0 4px}
+.hint{color:var(--muted);font-size:.9rem;margin:0 0 12px}
+.pts{font-weight:700;color:var(--gold);white-space:nowrap}
+.gcard{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gcard h3{margin:0 0 6px;font-size:1rem}
+.gcard .chloe h3{color:var(--chloe)} .gcard .cj h3{color:var(--cj)}
+.gcard label{display:block;font-size:.85rem;color:var(--muted);margin-top:8px}
+select{width:100%;padding:10px 8px;border:2px solid var(--line);border-radius:10px;background:var(--surface);min-height:44px}
+.mark{display:block;font-size:.85rem;font-weight:700;min-height:1.2em}
+.mark.ok{color:var(--good)} .mark.no{color:var(--bad);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--line);border-left-width:7px;background:var(--surface);border-radius:10px;padding:9px 14px;cursor:pointer;font-weight:600;min-height:46px}
+.chip.t-chloe{border-left-color:var(--chloe)} .chip.t-cj{border-left-color:var(--cj)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.t-chloe[aria-pressed="true"]{border-left-color:var(--chloe)} .chip.t-cj[aria-pressed="true"]{border-left-color:var(--cj)}
+.chip:disabled{cursor:default;opacity:.6}
+textarea{width:100%;min-height:110px;border:2px solid var(--line);border-radius:10px;padding:10px;background:var(--surface);resize:vertical}
+.status{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar) + env(safe-area-inset-bottom,0px) + 10px);
+  background:var(--ink);color:var(--bg);border-radius:999px;padding:5px 14px;font-size:.85rem;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none}
+.status.show{opacity:.92}
+
+/* Tables */
+.scroll{overflow-x:auto}
+table.data{width:100%;border-collapse:collapse;font-size:.95rem}
+table.data th,table.data td{padding:8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data tr.out td{color:var(--muted)}
+.teamhead.chloe{color:var(--chloe)} .teamhead.cj{color:var(--cj)}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--cj);font-weight:600;cursor:pointer;text-decoration:underline}
+.btn{border:2px solid var(--ink);background:var(--surface);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;margin-top:12px;min-height:44px}
+.banner{background:var(--surface);border:2px solid var(--gold);border-radius:12px;padding:10px 14px;margin:12px;font-size:.95rem}
+.empty{color:var(--muted)}
+
+/* Bottom tab bar, iOS style */
+.tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+.tabbar .wrap{display:grid;grid-template-columns:repeat(4,1fr);height:var(--tabbar)}
+.tabbar button{background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:.72rem;font-weight:600}
+.tabbar svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabbar button[aria-current="page"]{color:var(--ink)}
+@media (max-width:330px){ .gcard{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="title"><h1>Bake Off Fantasy League</h1><div class="bunting" aria-hidden="true" id="bunting"></div></div>
+<div class="board" id="board"></div>
+<main class="wrap" id="main"><p class="pre-note">Loading your league…</p></main>
+<div class="status" id="status" aria-live="polite"></div>
+<nav class="tabbar" aria-label="Sections"><div class="wrap">
+  <button data-act="tab" data-tab="matchup"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M7 10h1M16 10h1"/></svg>Matchup</button>
+  <button data-act="tab" data-tab="score"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Score it</button>
+  <button data-act="tab" data-tab="teams"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.5 5 2.8 5 5.8"/></svg>Teams</button>
+  <button data-act="tab" data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>Settings</button>
+</div></nav>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, collection, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB8NOwTeeCXHsJX7cpRrO8nxPdgKJJwAf0",
+  authDomain: "bake-off-fantasy.firebaseapp.com",
+  projectId: "bake-off-fantasy",
+  storageBucket: "bake-off-fantasy.firebasestorage.app",
+  messagingSenderId: "57080900503",
+  appId: "1:57080900503:web:4475d329ef32129dd532d2"
+};
+const fbApp = initializeApp(firebaseConfig);
+const fs = getFirestore(fbApp);
+const auth = getAuth(fbApp);
+
+/* Starting data, used once to set up the league in a new database */
+const STARTING_DATA = {
+  league: { episodeCount:10, teams:[
+    { name:"Chloe", bakers:["Moyin","Danny","Connie","Molly","Mo","Gabe"] },
+    { name:"CJ", bakers:["Shannon","Tom","Gary","Yannis","Clara","Nikki"] } ] },
+  episodes: [ { num:1, tech:null, star:null, home:[], handshakes:[],
+    guesses:{ Chloe:{star:null,home:null,handshake:null}, CJ:{star:null,home:null,handshake:null} },
+    notes:"Emergency departure this week, so no elimination. Expect a double elimination next episode." } ]
+};
+const PTS = { tech:2, star:3, handshake:5, gStar:1, gHome:1, gHand:1 };
+const PRESEASON = 1;
+const state = { league:null, episodes:{}, ep:2, epChosen:false, tab:"matchup", loaded:false, readOnly:false, mode:"demo", user:null, denied:false, demoTouched:false, signingIn:false };
+const writing = {}, dirty = {};
+document.getElementById("bunting").innerHTML = "<span></span>".repeat(60);
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const teams = () => state.league?.teams || [];
+const cls = name => name ? name.toLowerCase().replace(/[^a-z0-9]/g,"") : "";
+const epCount = () => state.league?.episodeCount || 10;
+const epLabel = n => n === PRESEASON ? "Preseason" : `Ep ${n}`;
+
+function blankEp(n){
+  const guesses = {};
+  teams().forEach(t => guesses[t.name] = { star:null, home:null, handshake:null });
+  return { num:n, tech:null, star:null, home:[], handshakes:[], guesses, notes:"" };
+}
+function getEp(n){
+  const ep = state.episodes[n] ? JSON.parse(JSON.stringify(state.episodes[n])) : blankEp(n);
+  ep.home = ep.home || []; ep.handshakes = ep.handshakes || []; ep.guesses = ep.guesses || {};
+  teams().forEach(t => { ep.guesses[t.name] = Object.assign({star:null,home:null,handshake:null}, ep.guesses[t.name]); });
+  return ep;
+}
+function hasData(e){ return e && (e.tech || e.star || (e.home||[]).length || (e.handshakes||[]).length ||
+  Object.values(e.guesses||{}).some(g => g && (g.star||g.home||g.handshake))); }
+function outBefore(n){
+  const out = {};
+  Object.values(state.episodes).forEach(e => { if (e.num < n) (e.home||[]).forEach(b => out[b] = e.num); });
+  return out;
+}
+
+/* Points for one baker in one episode */
+function bakerEp(ep, b){
+  const ev = []; let p = 0;
+  if (ep.num === PRESEASON) return { p, ev };
+  if (ep.tech === b){ p += PTS.tech; ev.push("Won Technical"); }
+  if (ep.star === b){ p += PTS.star; ev.push("Star Baker"); }
+  const hs = ep.handshakes.filter(x => x === b).length;
+  if (hs){ p += hs*PTS.handshake; ev.push("Handshake"); }
+  if (ep.home.includes(b)) ev.push("Went home");
+  return { p, ev };
+}
+function guessEp(ep, team){
+  const g = ep.guesses[team] || {}, lines = []; let p = 0;
+  if (ep.num === PRESEASON) return { p, lines };
+  const add = (label, pick, decided, hit, pts) => {
+    if (!pick) return;
+    if (decided && hit) p += pts;
+    lines.push({ label, pick, state: !decided ? "" : hit ? "ok" : "no" });
+  };
+  add("SB", g.star, !!ep.star, g.star === ep.star, PTS.gStar);
+  add("Home", g.home, ep.home.length > 0, ep.home.includes(g.home), PTS.gHome);
+  add("HS", g.handshake, ep.handshakes.length > 0, ep.handshakes.includes(g.handshake), PTS.gHand);
+  return { p, lines };
+}
+function scoreEp(ep){
+  const r = {};
+  teams().forEach(t => {
+    const items = [];
+    t.bakers.forEach(b => { const x = bakerEp(ep, b); if (x.p) items.push([`${b}: ${x.ev.filter(e=>e!=="Went home").join(", ")}`, x.p]); });
+    const g = guessEp(ep, t.name); if (g.p) items.push(["Guesses", g.p]);
+    r[t.name] = { items, total: items.reduce((s,i)=>s+i[1],0) };
+  });
+  return r;
+}
+function season(){
+  const tot = {}; teams().forEach(t => tot[t.name] = 0);
+  for (let n=1; n<=epCount(); n++){ const s = scoreEp(getEp(n)); for (const k in s) tot[k] += s[k].total; }
+  return tot;
+}
+
+/* ---------- header (season-long) ---------- */
+function lastScoredEp(){ let last = 0; for (let n=2; n<=epCount(); n++) if (hasData(state.episodes[n])) last = n; return last; }
+function renderBoard(){
+  const ts = teams(), tot = season(), [L,R] = ts, last = lastScoredEp(), wk = last ? scoreEp(getEp(last)) : null;
+  const side = t => t ? `<div class="tm ${cls(t.name)}"><div class="tn">${esc(t.name)}</div><div class="big">${tot[t.name]||0}</div><div class="wk">${wk ? `+${wk[t.name].total} in ep ${last}` : "Starts ep 2"}</div></div>` : `<div></div>`;
+  let therm = "";
+  if (L && R){
+    const a = tot[L.name]||0, b = tot[R.name]||0, s = a+b, pa = s ? Math.round(a/s*100) : 50, pb = 100-pa;
+    therm = `<div class="therm wrap"><div class="tl"><span class="pc ${cls(L.name)}">${pa}%</span><span class="cap">Season lean</span><span class="pc ${cls(R.name)}">${pb}%</span></div>
+      <div class="bar${s?"":" even"}" role="img" aria-label="${esc(L.name)} has ${pa}% of season points and ${esc(R.name)} has ${pb}%"><span class="fill ${cls(L.name)}" style="width:${pa}%"></span><span class="fill ${cls(R.name)}" style="width:${pb}%"></span></div></div>`;
+  }
+  document.getElementById("board").innerHTML = `<div class="inner wrap">${side(L)}<div class="mid"><span class="vs">VS</span><span class="lbl">Season</span></div>${side(R)}</div>${therm}`;
+  document.querySelectorAll(".tabbar button").forEach(b => b.dataset.tab === state.tab ? b.setAttribute("aria-current","page") : b.removeAttribute("aria-current"));
+}
+
+/* ---------- season stats ---------- */
+function bakerStats(){
+  const s = {};
+  teams().forEach(t => t.bakers.forEach(b => s[b] = { tech:0, star:0, hs:0, out:null }));
+  for (let n=1;n<=epCount();n++){
+    const e = getEp(n);
+    e.home.forEach(b => s[b] && (s[b].out = n));
+    if (n === PRESEASON) continue;
+    if (e.tech && s[e.tech]) s[e.tech].tech++;
+    if (e.star && s[e.star]) s[e.star].star++;
+    e.handshakes.forEach(b => s[b] && s[b].hs++);
+  }
+  Object.values(s).forEach(x => x.pts = x.tech*PTS.tech + x.star*PTS.star + x.hs*PTS.handshake);
+  return s;
+}
+function guessStats(team){
+  const c = { star:0, home:0, hs:0 };
+  for (let n=2;n<=epCount();n++){
+    const ep = getEp(n), g = ep.guesses[team] || {};
+    if (g.star && g.star === ep.star) c.star++;
+    if (g.home && ep.home.includes(g.home)) c.home++;
+    if (g.handshake && ep.handshakes.includes(g.handshake)) c.hs++;
+  }
+  c.pts = c.star*PTS.gStar + c.home*PTS.gHome + c.hs*PTS.gHand;
+  return c;
+}
+
+/* ---------- matchup (home, whole season) ---------- */
+function renderMatchup(){
+  const ts = teams(), st = bakerStats(), [L,R] = ts;
+  const note = lastScoredEp() ? "" : `<p class="pre-note">Season scoring starts in episode 2. Enter results on the Score it tab.</p>`;
+  let html = note + rowsHtml(ts, (t,b) => {
+    const x = st[b], parts = [];
+    if (x.tech) parts.push(`Tech ${x.tech}`); if (x.star) parts.push(`Star ${x.star}`); if (x.hs) parts.push(`Shake ${x.hs}`);
+    return { nm:b, sub:[parts.length ? parts.join(", ") : "No points yet", x.out ? `Out in ep ${x.out}` : "Still baking"], p:x.pts, out:!!x.out };
+  });
+  if (L && R){
+    const gl = guessStats(L.name), gr = guessStats(R.name), tot = season();
+    const gsub = g => [`Star Baker ${g.star}`, `Going home ${g.home}`, `Handshake ${g.hs}`];
+    html += rowHtml({nm:"Guesses", sub:gsub(gl), p:gl.pts}, "Guess", {nm:"Guesses", sub:gsub(gr), p:gr.pts});
+    html += `<div class="row total">${side({nm:"Season total",sub:[]},"l")}<div class="pt l">${tot[L.name]}</div><div class="pos">Total</div><div class="pt r">${tot[R.name]}</div>${side({nm:"Season total",sub:[]},"r")}</div>`;
+  }
+  return html;
+}
+function side(c, s){ return `<div class="side ${s}"><div class="nm">${esc(c.nm)}</div>${c.sub.map(x=>`<div class="sub">${c.raw?x:esc(x)}</div>`).join("")}</div>`; }
+function rowHtml(a, pos, b){
+  const sd = (c, s) => `<div class="side ${s}"${c.out?' style="opacity:.6"':""}><div class="nm">${esc(c.nm)}</div>${c.sub.map(x=>`<div class="sub">${esc(x)}</div>`).join("")}</div>`;
+  return `<div class="row${a.out?" out-l":""}${b.out?" out-r":""}">${sd(a,"l")}<div class="pt l">${a.p}</div><div class="pos">${pos}</div><div class="pt r">${b.p}</div>${sd(b,"r")}</div>`;
+}
+function rowsHtml(ts, cell){
+  const [L,R] = ts; if (!L) return "";
+  const len = Math.max(L.bakers.length, R?.bakers.length||0); let h = "";
+  const blank = { nm:"", sub:[], p:"" };
+  for (let i=0;i<len;i++){
+    const a = L.bakers[i] ? cell(L, L.bakers[i]) : blank, b = R?.bakers[i] ? cell(R, R.bakers[i]) : blank;
+    h += rowHtml(a, `R${i+1}`, b);
+  }
+  return h;
+}
+
+/* ---------- score it ---------- */
+function epNav(){
+  const n = state.ep;
+  let d = "";
+  for (let i=1; i<=epCount(); i++)
+    d += `<button data-act="goto" data-n="${i}" aria-label="${i===PRESEASON?"Preseason (episode 1)":"Episode "+i}" aria-current="${i===n}"><i class="${i===PRESEASON?"pre ":""}${hasData(state.episodes[i])?"has":""}"></i></button>`;
+  return `<div class="epbar" id="epbar"><button class="arrow" data-act="ep-prev" aria-label="Previous episode" ${n<=1?"disabled":""}>‹</button>
+    <div class="eptitle">${n===PRESEASON?"Preseason":"Episode "+n}<small>${n===PRESEASON?"Episode 1, no points":`Swipe or tap the dots to change episode`}</small></div>
+    <button class="arrow" data-act="ep-next" aria-label="Next episode" ${n>=epCount()?"disabled":""}>›</button></div>
+    <nav class="dots" aria-label="Episodes">${d}</nav>`;
+}
+function bakerOptions(sel, n){
+  const out = outBefore(n);
+  let h = `<option value="">Pick a baker</option>`;
+  teams().forEach(t => {
+    h += `<optgroup label="${esc(t.name)}'s bakers">`;
+    t.bakers.forEach(b => { if (!out[b] || b === sel) h += `<option ${b===sel?"selected":""}>${esc(b)}</option>`; });
+    h += `</optgroup>`;
+  });
+  return h;
+}
+function chips(act, selected, n){
+  const out = outBefore(n), dis = state.readOnly ? "disabled" : "";
+  return `<div class="chips">` + teams().flatMap(t => t.bakers.filter(b => !out[b] || selected.includes(b)).map(b =>
+    `<button class="chip t-${cls(t.name)}" data-act="${act}" data-b="${esc(b)}" aria-pressed="${selected.includes(b)}" ${dis}>${esc(b)}</button>`)).join("") + `</div>`;
+}
+function notesBox(ep, label){
+  return `<section><h2>${label}</h2><textarea id="notes" aria-label="${label}" placeholder="Anything worth remembering" ${state.readOnly?"disabled":""}>${esc(ep.notes)}</textarea></section>`;
+}
+function renderScore(){
+  const n = state.ep, ep = getEp(n), ts = teams(), dis = state.readOnly ? "disabled" : "";
+  if (n === PRESEASON) return epNav() + `<div class="pad"><section><h2>Preseason</h2><p class="hint" style="margin:0">No points in episode 1. Jot down which bakers caught your eye before you draft.</p></section>${notesBox(ep,"Scouting notes")}</div>`;
+  const kinds = [["star","Star Baker",!!ep.star, x=>x===ep.star],["home","Going home",ep.home.length>0,x=>ep.home.includes(x)],["handshake","Handshake",ep.handshakes.length>0,x=>ep.handshakes.includes(x)]];
+  const sc = scoreEp(ep);
+  return epNav() + `<div class="pad">
+  <section>
+    <h2>Guesses <span class="pts">+1 each</span></h2>
+    <p class="hint">Any baker counts. One handshake guess each per episode.</p>
+    <div class="gcard">${ts.map(t => { const gg = ep.guesses[t.name]; return `<div class="${cls(t.name)}"><h3>${esc(t.name)}</h3>${kinds.map(([k,label,decided,hit]) =>
+      `<label for="g-${cls(t.name)}-${k}">${label}</label><select id="g-${cls(t.name)}-${k}" data-guess="${k}" data-team="${esc(t.name)}" ${dis}>${bakerOptions(gg[k], n)}</select>${
+        gg[k] && decided ? (hit(gg[k]) ? `<span class="mark ok">Correct, +1</span>` : `<span class="mark no">Not this time</span>`) : `<span class="mark"></span>`}`).join("")}</div>`; }).join("")}</div>
+  </section>
+  <section><h2>Technical winner <span class="pts">+${PTS.tech}</span></h2><p class="hint">Tap the winner when it's announced.</p>${chips("tech", ep.tech?[ep.tech]:[], n)}</section>
+  <section><h2>Handshakes <span class="pts">+${PTS.handshake} each</span></h2><p class="hint">Tap a baker the moment Paul shakes their hand. Tap again to undo.</p>${chips("hs", ep.handshakes, n)}</section>
+  <section><h2>Star Baker <span class="pts">+${PTS.star}</span></h2>${chips("star", ep.star?[ep.star]:[], n)}</section>
+  <section><h2>Going home</h2><p class="hint">Tap everyone who leaves. Leave it empty if no one goes home; tap two for a double elimination.</p>${chips("home", ep.home, n)}</section>
+  <section><h2>Episode ${n} points</h2><div class="scroll"><table class="data"><tbody>${ts.map(t=>`<tr><td class="teamhead ${cls(t.name)}"><strong>${esc(t.name)}</strong></td><td><strong>${sc[t.name].total}</strong></td></tr>`).join("")}</tbody></table></div></section>
+  ${notesBox(ep, "Notes")}
+  </div>`;
+}
+
+/* ---------- teams (season stats) ---------- */
+function renderTeams(){
+  const st = bakerStats(), ts = teams(), tot = season();
+  const teamSec = t => {
+    const g = guessStats(t.name), bk = t.bakers.reduce((s,b)=>s+st[b].pts,0);
+    return `<section><h2 class="teamhead ${cls(t.name)}">${esc(t.name)}'s team <span class="tt">${tot[t.name]} pts</span></h2>
+    <div class="scroll"><table class="data">
+      <thead><tr><th>Baker</th><th>Tech</th><th>Star</th><th>Shake</th><th>Total</th></tr></thead>
+      <tbody>${t.bakers.map(b => { const x = st[b];
+        return `<tr class="${x.out?"out":""}"><td>${esc(b)}${x.out?`<small class="o">Out ep ${x.out}</small>`:""}</td><td>${x.tech*PTS.tech}</td><td>${x.star*PTS.star}</td><td>${x.hs*PTS.handshake}</td><td><strong>${x.pts}</strong></td></tr>`; }).join("")}
+      <tr class="sum"><td>Bakers</td><td>${t.bakers.reduce((s,b)=>s+st[b].tech*PTS.tech,0)}</td><td>${t.bakers.reduce((s,b)=>s+st[b].star*PTS.star,0)}</td><td>${t.bakers.reduce((s,b)=>s+st[b].hs*PTS.handshake,0)}</td><td><strong>${bk}</strong></td></tr>
+      </tbody>
+    </table></div>
+    <div class="scroll"><table class="data" style="margin-top:10px">
+      <thead><tr><th>Guesses</th><th>Star</th><th>Home</th><th>Shake</th><th>Total</th></tr></thead>
+      <tbody><tr><td>Points</td><td>${g.star}</td><td>${g.home}</td><td>${g.hs}</td><td><strong>${g.pts}</strong></td></tr></tbody>
+    </table></div></section>`;
+  };
+  let rows = "";
+  for (let n=2; n<=epCount(); n++){
+    const sc = scoreEp(getEp(n));
+    rows += `<tr><td><button class="linkbtn" data-act="goto-score" data-n="${n}">Episode ${n}</button></td>${ts.map(t=>`<td>${sc[t.name].total}</td>`).join("")}</tr>`;
+  }
+  return `<div class="pad">${ts.map(teamSec).join("")}
+  <section><h2>Points by episode</h2><p class="hint">Tap an episode to open it in Score it.</p><div class="scroll"><table class="data">
+    <thead><tr><th>Episode</th>${ts.map(t=>`<th>${esc(t.name)}</th>`).join("")}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div></section></div>`;
+}
+
+/* ---------- settings ---------- */
+function renderSettings(){
+  const rules = [["Your baker wins the Technical",PTS.tech],["Your baker is Star Baker",PTS.star],["Your baker gets a handshake",PTS.handshake],
+                 ["You guess Star Baker",PTS.gStar],["You guess who goes home",PTS.gHome],["You guess who gets a handshake (one per episode)",PTS.gHand]];
+  const n = epCount(), lastHas = hasData(state.episodes[n]) || !!state.episodes[n]?.notes, ro = state.readOnly;
+  return `<div class="pad">
+  <section><h2>How points work</h2>
+    <p class="hint">It works like fantasy football. Your bakers earn points for your team, and your guesses earn points for you no matter whose baker it is. Everything adds up across the season.</p>
+    <div class="scroll"><table class="data"><tbody>${rules.map(([l,p])=>`<tr><td style="white-space:normal">${l}</td><td class="pts">+${p}</td></tr>`).join("")}</tbody></table></div>
+    <p class="hint" style="margin-top:12px">Episode 1 is preseason: no points, just scouting bakers before the draft. Scoring starts in episode 2.</p>
+    <p class="hint">When a baker misses an episode there's usually no elimination that week and a double elimination the next. Just tap both bakers under Going home.</p>
+  </section>
+  <section><h2>Episodes</h2>
+    <p class="hint">This season has ${n} episodes, including the preseason.</p>
+    ${ro ? "" : `<div class="btnrow"><button class="btn" data-act="add-ep">Add an episode</button>
+    <button class="btn" data-act="rm-ep" ${n<=2||lastHas?"disabled":""}>Remove episode ${n}</button></div>
+    ${lastHas ? `<p class="hint" style="margin-top:8px">Episode ${n} has scores or notes, so it can't be removed.</p>` : ""}`}
+  </section>
+  <section><h2>Your account</h2>
+    ${state.mode === "editor"
+      ? `<p class="hint">Signed in as ${esc(state.user?.email)}. Your changes save and sync to both phones.</p><button class="btn" data-act="signout">Sign out</button>`
+      : `<p class="hint">You're in demo mode. Tap around as much as you like; nothing is saved, and refreshing resets it.</p><button class="btn" data-act="signin">Sign in with Google</button>`}
+  </section>
+  <section><h2>Download a backup</h2>
+    <p class="hint">Saves a copy of every episode to this device. The spreadsheet opens in Excel or Google Sheets; the full backup keeps everything needed to restore the league.</p>
+    <div class="btnrow"><button class="btn" data-act="dl-csv">Download spreadsheet</button><button class="btn" data-act="dl-json">Download full backup</button></div>
+  </section>
+  <section><h2>About this project</h2>
+    <p class="hint">A fantasy league scoreboard for The Great British Bake Off, built so my wife and I could score each episode as we watch. Bakers earn points for their team, and correct guesses earn points for whoever made them.</p>
+    <p class="hint" style="margin:0">Built with HTML, CSS and JavaScript, with Firebase for Google sign-in and real-time syncing between our phones. Visitors see the live league in demo mode, where every control works but nothing is saved.</p>
+  </section></div>`;
+}
+
+function signinPrompt(){
+  if (state.denied) return `<div class="banner">${esc(state.user?.email || "This account")} can't save changes to this league, so you're in demo mode. <button class="linkbtn" data-act="signout">Sign out</button></div>`;
+  return `<div class="banner"><strong>Demo mode.</strong> Tap around as much as you like; nothing is saved, and refreshing resets it. <button class="linkbtn" data-act="signin">${state.signingIn ? "Signing in…" : "Sign in to save"}</button></div>`;
+}
+
+function render(){
+  renderBoard();
+  const main = document.getElementById("main");
+  if (!state.loaded){ main.innerHTML = `<p class="pre-note">Loading your league…</p>`; return; }
+  if (!state.league){ main.innerHTML = state.mode === "editor"
+      ? `<section class="pad"><h2>Set up your league</h2><p class="hint">This database is empty. Load your teams and your episode 1 notes to get started.</p><button class="btn" data-act="seed">Load our league</button></section>`
+      : `<p class="pre-note">This league isn't set up yet.</p>${signinPrompt()}`; return; }
+  const a = document.activeElement, focus = a?.id === "notes" ? { s:a.selectionStart, e:a.selectionEnd } : null;
+  const banner = state.mode === "editor" ? "" : signinPrompt();
+  main.innerHTML = banner + ({matchup:renderMatchup, score:renderScore, teams:renderTeams, settings:renderSettings}[state.tab] || renderMatchup)();
+  if (focus){ const t = document.getElementById("notes"); if (t){ t.focus({preventScroll:true}); t.setSelectionRange(focus.s, focus.e); } }
+}
+
+/* ---------- saving ---------- */
+let statusTimer;
+function setStatus(t, stay){ const el = document.getElementById("status"); el.textContent = t; el.classList.toggle("show", !!t);
+  clearTimeout(statusTimer); if (t && !stay) statusTimer = setTimeout(() => el.classList.remove("show"), 1400); }
+async function persist(path, getData, key){
+  if (state.mode !== "editor"){ state.demoTouched = true; return; }
+  dirty[key] = true; if (writing[key]) return;
+  writing[key] = true; setStatus("Saving…", true);
+  while (dirty[key]){
+    dirty[key] = false;
+    try { await setDoc(doc(fs, path), JSON.parse(JSON.stringify(getData()))); setStatus("Saved"); }
+    catch(e){
+      if (e?.code === "permission-denied"){ state.mode = "demo"; state.denied = true; setStatus(""); render(); }
+      else setStatus("Couldn't save. Check your connection and try again.", true);
+      break;
+    }
+  }
+  writing[key] = false;
+}
+function updateEp(mut){
+  const n = state.ep, ep = getEp(n); mut(ep);
+  state.episodes[n] = ep; render();
+  persist(`episodes/ep${n}`, () => state.episodes[n], "ep"+n);
+}
+function goEp(n){ if (n<1 || n>epCount() || n===state.ep) return; state.ep = n; state.epChosen = true; render(); }
+
+/* ---------- events ---------- */
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const a = b.dataset.act, baker = b.dataset.b;
+  if (a === "tab"){ state.tab = b.dataset.tab; render(); window.scrollTo(0,0); return; }
+  if (a === "ep-prev") return goEp(state.ep-1);
+  if (a === "ep-next") return goEp(state.ep+1);
+  if (a === "goto") return goEp(+b.dataset.n);
+  if (a === "goto-score"){ state.tab = "score"; state.ep = +b.dataset.n; state.epChosen = true; render(); window.scrollTo(0,0); return; }
+  if (a === "signin"){ doSignIn(); return; }
+  if (a === "signout"){ signOut(auth).finally(() => location.reload()); return; }
+  if (a === "dl-csv"){ downloadCSV(); return; }
+  if (a === "dl-json"){ downloadJSON(); return; }
+  if (a === "seed"){ seedLeague(); return; }
+  if (a === "rm-ep"){ const n = epCount(); if (n <= 2 || hasData(state.episodes[n]) || state.episodes[n]?.notes) return;
+    if (!confirm(`Remove episode ${n}?`)) return;
+    state.league = {...state.league, episodeCount: n-1}; if (state.ep > n-1) state.ep = n-1; render();
+    persist("league/main", () => state.league, "league");
+    if (state.episodes[n]){ delete state.episodes[n]; if (state.mode === "editor") deleteDoc(doc(fs, `episodes/ep${n}`)).catch(()=>{}); } return; }
+  if (a === "add-ep"){ state.league = {...state.league, episodeCount: epCount()+1}; render(); persist("league/main", () => state.league, "league"); return; }
+  if (state.readOnly) return;
+  if (a === "tech") updateEp(ep => ep.tech = ep.tech === baker ? null : baker);
+  if (a === "star") updateEp(ep => ep.star = ep.star === baker ? null : baker);
+  if (a === "home") updateEp(ep => ep.home = ep.home.includes(baker) ? ep.home.filter(x=>x!==baker) : [...ep.home, baker]);
+  if (a === "hs")   updateEp(ep => ep.handshakes = ep.handshakes.includes(baker) ? ep.handshakes.filter(x=>x!==baker) : [...ep.handshakes, baker]);
+});
+document.addEventListener("change", e => {
+  const s = e.target.closest("select[data-guess]"); if (!s) return;
+  updateEp(ep => ep.guesses[s.dataset.team][s.dataset.guess] = s.value || null);
+});
+let notesTimer;
+function saveNotes(){ const t = document.getElementById("notes"); if (!t) return; const v = t.value;
+  const n = state.ep, ep = getEp(n); if (ep.notes === v) return; ep.notes = v; state.episodes[n] = ep;
+  persist(`episodes/ep${n}`, () => state.episodes[n], "ep"+n); }
+document.addEventListener("input", e => { if (e.target.id === "notes"){ clearTimeout(notesTimer); notesTimer = setTimeout(saveNotes, 900); } });
+document.addEventListener("focusout", e => { if (e.target.id === "notes"){ clearTimeout(notesTimer); saveNotes(); } });
+
+/* Swipe the scoreboard left/right to change episode */
+let sx = null, sy = null;
+document.addEventListener("touchstart", e => { if (!e.target.closest("#epbar, .dots")) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive:true});
+document.addEventListener("touchend", e => {
+  if (sx === null) return; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) goEp(state.ep + (dx < 0 ? 1 : -1));
+}, {passive:true});
+
+/* ---------- start ---------- */
+function pickStartEp(){
+  if (state.epChosen) return;
+  let last = 2;
+  for (let n=2; n<=epCount(); n++) if (hasData(state.episodes[n])) last = n;
+  state.ep = last;
+}
+async function doSignIn(){
+  if (state.signingIn) return;
+  state.signingIn = true; render();
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); location.reload(); }
+  catch(e){
+    state.signingIn = false; render();
+    const msg = e?.code === "auth/popup-blocked" ? "Your browser blocked the sign-in window. Allow pop-ups for this site and try again."
+      : e?.code === "auth/unauthorized-domain" ? "Sign-in isn't allowed from this web address yet. Add it under Authorized domains in Firebase."
+      : e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request" ? ""
+      : "Couldn't sign in. Check your connection and try again.";
+    if (msg) setStatus(msg, true);
+  }
+}
+async function seedLeague(){
+  try {
+    setStatus("Setting up…", true);
+    await setDoc(doc(fs, "league/main"), STARTING_DATA.league);
+    for (const ep of STARTING_DATA.episodes) await setDoc(doc(fs, `episodes/ep${ep.num}`), ep);
+    setStatus("Your league is ready");
+  } catch(e){
+    if (e?.code === "permission-denied"){ state.mode = "demo"; state.denied = true; setStatus(""); render(); }
+    else setStatus("Couldn't set up the league. Check your connection and try again.", true);
+  }
+}
+
+/* ---------- backups ---------- */
+function saveFile(name, text, type){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+const today = () => new Date().toISOString().slice(0,10);
+function downloadJSON(){
+  saveFile(`bake-off-backup-${today()}.json`, JSON.stringify({ league: state.league, episodes: state.episodes }, null, 2), "application/json");
+}
+function downloadCSV(){
+  const ts = teams(), q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+  const head = ["Episode","Technical winner","Star Baker","Went home","Handshakes"];
+  ts.forEach(t => head.push(`${t.name} Star Baker guess`, `${t.name} going-home guess`, `${t.name} handshake guess`));
+  ts.forEach(t => head.push(`${t.name} points`));
+  head.push("Notes");
+  const lines = [head.map(q).join(",")];
+  for (let n=1; n<=epCount(); n++){
+    const ep = getEp(n), sc = scoreEp(ep);
+    const row = [n === PRESEASON ? "1 (preseason)" : n, ep.tech, ep.star, ep.home.join("; "), ep.handshakes.join("; ")];
+    ts.forEach(t => { const g = ep.guesses[t.name]; row.push(g.star, g.home, g.handshake); });
+    ts.forEach(t => row.push(sc[t.name].total));
+    row.push(ep.notes);
+    lines.push(row.map(q).join(","));
+  }
+  saveFile(`bake-off-scores-${today()}.csv`, lines.join("\r\n"), "text/csv");
+}
+
+/* ---------- start ---------- */
+render();
+let gotLeague = false, gotEps = false;
+const ready = () => { if (gotLeague && gotEps){ if (!state.loaded) pickStartEp(); state.loaded = true; } render(); };
+const lost = () => { state.loaded = true; setStatus("Lost connection to saved scores. Reload the page.", true); render(); };
+onAuthStateChanged(auth, u => { state.user = u; state.mode = u ? "editor" : "demo"; state.denied = false; render(); });
+onSnapshot(doc(fs, "league/main"), snap => {
+  if (!state.demoTouched && !writing.league) state.league = snap.exists() ? snap.data() : null;
+  gotLeague = true; ready();
+}, lost);
+onSnapshot(collection(fs, "episodes"), snap => {
+  if (!state.demoTouched){
+    snap.docs.forEach(d => { const data = d.data(), n = data?.num;
+      if (n && !writing["ep"+n] && !(document.activeElement?.id === "notes" && n === state.ep)) state.episodes[n] = data; });
+    snap.docChanges().forEach(c => { if (c.type === "removed"){ const n = c.doc.data()?.num; if (n) delete state.episodes[n]; } });
+  }
+  gotEps = true; ready();
+}, lost);
+</script>
+</body>
+</html>
