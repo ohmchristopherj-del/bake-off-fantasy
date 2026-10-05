@@ -79,6 +79,7 @@ button,select,textarea{font:inherit;color:inherit;font-size:max(16px,1em);touch-
 .eptitle{text-align:center;font-family:var(--display);font-size:1.6rem;line-height:1.1}
 .eptitle small{display:block;font-family:var(--body);font-size:.78rem;color:var(--muted);margin-top:3px}
 .tt{float:right;font-size:1rem;color:var(--ink)}
+table.data.tight{font-size:.88rem} table.data.tight th,table.data.tight td{padding:8px 4px}
 table.data tr.sum td{font-weight:700;border-top:2px solid var(--line)}
 table.data small.o{display:block;font-size:.75rem}
 .btnrow{display:flex;flex-wrap:wrap;gap:10px}
@@ -195,7 +196,7 @@ const STARTING_DATA = {
     guesses:{ Chloe:{star:null,home:null,handshake:null}, CJ:{star:null,home:null,handshake:null} },
     notes:"Emergency departure this week, so no elimination. Expect a double elimination next episode." } ]
 };
-const PTS = { tech:2, star:3, handshake:5, gStar:1, gHome:1, gHand:1 };
+const PTS = { tech:2, star:3, handshake:5, gTech:1, gStar:1, gHome:1, gHand:1 };
 const PRESEASON = 1;
 const state = { league:null, episodes:{}, ep:2, epChosen:false, tab:"matchup", loaded:false, readOnly:false, mode:"demo", user:null, denied:false, demoTouched:false, signingIn:false };
 const writing = {}, dirty = {};
@@ -209,13 +210,13 @@ const epLabel = n => n === PRESEASON ? "Preseason" : `Ep ${n}`;
 
 function blankEp(n){
   const guesses = {};
-  teams().forEach(t => guesses[t.name] = { star:null, home:null, handshake:null });
+  teams().forEach(t => guesses[t.name] = { tech:null, star:null, home:null, handshake:null });
   return { num:n, tech:null, star:null, home:[], handshakes:[], guesses, notes:"" };
 }
 function getEp(n){
   const ep = state.episodes[n] ? JSON.parse(JSON.stringify(state.episodes[n])) : blankEp(n);
   ep.home = ep.home || []; ep.handshakes = ep.handshakes || []; ep.guesses = ep.guesses || {};
-  teams().forEach(t => { ep.guesses[t.name] = Object.assign({star:null,home:null,handshake:null}, ep.guesses[t.name]); });
+  teams().forEach(t => { ep.guesses[t.name] = Object.assign({tech:null,star:null,home:null,handshake:null}, ep.guesses[t.name]); });
   return ep;
 }
 function hasData(e){ return e && (e.tech || e.star || (e.home||[]).length || (e.handshakes||[]).length ||
@@ -245,6 +246,7 @@ function guessEp(ep, team){
     if (decided && hit) p += pts;
     lines.push({ label, pick, state: !decided ? "" : hit ? "ok" : "no" });
   };
+  add("Tech", g.tech, !!ep.tech, g.tech === ep.tech, PTS.gTech);
   add("SB", g.star, !!ep.star, g.star === ep.star, PTS.gStar);
   add("Home", g.home, ep.home.length > 0, ep.home.includes(g.home), PTS.gHome);
   add("HS", g.handshake, ep.handshakes.length > 0, ep.handshakes.includes(g.handshake), PTS.gHand);
@@ -297,14 +299,15 @@ function bakerStats(){
   return s;
 }
 function guessStats(team){
-  const c = { star:0, home:0, hs:0 };
+  const c = { tech:0, star:0, home:0, hs:0 };
   for (let n=2;n<=epCount();n++){
     const ep = getEp(n), g = ep.guesses[team] || {};
+    if (g.tech && g.tech === ep.tech) c.tech++;
     if (g.star && g.star === ep.star) c.star++;
     if (g.home && ep.home.includes(g.home)) c.home++;
     if (g.handshake && ep.handshakes.includes(g.handshake)) c.hs++;
   }
-  c.pts = c.star*PTS.gStar + c.home*PTS.gHome + c.hs*PTS.gHand;
+  c.pts = c.tech*PTS.gTech + c.star*PTS.gStar + c.home*PTS.gHome + c.hs*PTS.gHand;
   return c;
 }
 
@@ -319,7 +322,7 @@ function renderMatchup(){
   });
   if (L && R){
     const gl = guessStats(L.name), gr = guessStats(R.name), tot = season();
-    const gsub = g => [`Star Baker ${g.star}`, `Going home ${g.home}`, `Handshake ${g.hs}`];
+    const gsub = g => [`Technical ${g.tech}`, `Star Baker ${g.star}`, `Going home ${g.home}`, `Handshake ${g.hs}`];
     html += rowHtml({nm:"Guesses", sub:gsub(gl), p:gl.pts}, "Guess", {nm:"Guesses", sub:gsub(gr), p:gr.pts});
     html += `<div class="row total">${side({nm:"Season total",sub:[]},"l")}<div class="pt l">${tot[L.name]}</div><div class="pos">Total</div><div class="pt r">${tot[R.name]}</div>${side({nm:"Season total",sub:[]},"r")}</div>`;
   }
@@ -373,7 +376,7 @@ function notesBox(ep, label){
 function renderScore(){
   const n = state.ep, ep = getEp(n), ts = teams(), dis = state.readOnly ? "disabled" : "";
   if (n === PRESEASON) return epNav() + `<div class="pad"><section><h2>Preseason</h2><p class="hint" style="margin:0">No points in episode 1. Jot down which bakers caught your eye before you draft.</p></section>${notesBox(ep,"Scouting notes")}</div>`;
-  const kinds = [["star","Star Baker",!!ep.star, x=>x===ep.star],["home","Going home",ep.home.length>0,x=>ep.home.includes(x)],["handshake","Handshake",ep.handshakes.length>0,x=>ep.handshakes.includes(x)]];
+  const kinds = [["tech","Technical",!!ep.tech, x=>x===ep.tech],["star","Star Baker",!!ep.star, x=>x===ep.star],["home","Going home",ep.home.length>0,x=>ep.home.includes(x)],["handshake","Handshake",ep.handshakes.length>0,x=>ep.handshakes.includes(x)]];
   const sc = scoreEp(ep);
   return epNav() + `<div class="pad">
   <section>
@@ -405,9 +408,9 @@ function renderTeams(){
       <tr class="sum"><td>Bakers</td><td>${t.bakers.reduce((s,b)=>s+st[b].tech*PTS.tech,0)}</td><td>${t.bakers.reduce((s,b)=>s+st[b].star*PTS.star,0)}</td><td>${t.bakers.reduce((s,b)=>s+st[b].hs*PTS.handshake,0)}</td><td><strong>${bk}</strong></td></tr>
       </tbody>
     </table></div>
-    <div class="scroll"><table class="data" style="margin-top:10px">
-      <thead><tr><th>Guesses</th><th>Star</th><th>Home</th><th>Shake</th><th>Total</th></tr></thead>
-      <tbody><tr><td>Points</td><td>${g.star}</td><td>${g.home}</td><td>${g.hs}</td><td><strong>${g.pts}</strong></td></tr></tbody>
+    <div class="scroll"><table class="data tight" style="margin-top:10px">
+      <thead><tr><th>Guess</th><th>Tech</th><th>Star</th><th>Home</th><th>Shake</th><th>Total</th></tr></thead>
+      <tbody><tr><td>Points</td><td>${g.tech}</td><td>${g.star}</td><td>${g.home}</td><td>${g.hs}</td><td><strong>${g.pts}</strong></td></tr></tbody>
     </table></div></section>`;
   };
   let rows = "";
@@ -425,7 +428,7 @@ function renderTeams(){
 /* ---------- settings ---------- */
 function renderSettings(){
   const rules = [["Your baker wins the Technical",PTS.tech],["Your baker is Star Baker",PTS.star],["Your baker gets a handshake",PTS.handshake],
-                 ["You guess Star Baker",PTS.gStar],["You guess who goes home",PTS.gHome],["You guess who gets a handshake (one per episode)",PTS.gHand]];
+                 ["You guess the Technical winner",PTS.gTech],["You guess Star Baker",PTS.gStar],["You guess who goes home",PTS.gHome],["You guess who gets a handshake (one per episode)",PTS.gHand]];
   const n = epCount(), lastHas = hasData(state.episodes[n]) || !!state.episodes[n]?.notes, ro = state.readOnly;
   return `<div class="pad">
   <section><h2>How points work</h2>
@@ -590,14 +593,14 @@ function downloadJSON(){
 function downloadCSV(){
   const ts = teams(), q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
   const head = ["Episode","Technical winner","Star Baker","Went home","Handshakes"];
-  ts.forEach(t => head.push(`${t.name} Star Baker guess`, `${t.name} going-home guess`, `${t.name} handshake guess`));
+  ts.forEach(t => head.push(`${t.name} Technical guess`, `${t.name} Star Baker guess`, `${t.name} going-home guess`, `${t.name} handshake guess`));
   ts.forEach(t => head.push(`${t.name} points`));
   head.push("Notes");
   const lines = [head.map(q).join(",")];
   for (let n=1; n<=epCount(); n++){
     const ep = getEp(n), sc = scoreEp(ep);
     const row = [n === PRESEASON ? "1 (preseason)" : n, ep.tech, ep.star, ep.home.join("; "), ep.handshakes.join("; ")];
-    ts.forEach(t => { const g = ep.guesses[t.name]; row.push(g.star, g.home, g.handshake); });
+    ts.forEach(t => { const g = ep.guesses[t.name]; row.push(g.tech, g.star, g.home, g.handshake); });
     ts.forEach(t => row.push(sc[t.name].total));
     row.push(ep.notes);
     lines.push(row.map(q).join(","));
